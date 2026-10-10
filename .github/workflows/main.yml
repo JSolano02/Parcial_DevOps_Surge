@@ -1,0 +1,44 @@
+name: Despliegue automatico a Surge
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Obtener codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verificar sitio
+        run: test -f index.html
+
+      - name: Instalar Surge
+        run: npm install --global surge
+
+      - name: Publicar en Surge
+        env:
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+          SURGE_DOMAIN: ${{ vars.SURGE_DOMAIN }}
+        run: |
+          if [ -z "$SURGE_TOKEN" ]; then
+            echo "::error::Configura el secret SURGE_TOKEN en GitHub."
+            exit 1
+          fi
+          if [ -z "$SURGE_DOMAIN" ]; then
+            echo "::error::Configura la variable SURGE_DOMAIN en GitHub."
+            exit 1
+          fi
+          surge ./ "$SURGE_DOMAIN"
